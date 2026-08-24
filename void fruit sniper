@@ -1,0 +1,1394 @@
+-- =============================================
+-- ⚡ VOID FRUIT HOPPER - PREMIUM EDITION
+-- =============================================
+repeat task.wait() until game:IsLoaded()
+
+-- =============================================
+-- 🔑 VOID KEY SYSTEM - INTEGRATION
+-- =============================================
+
+-- ===== CONFIGURATION =====
+local KEY_WEBSITE = "https://shrtslug.biz/944mp"
+local DISCORD_LINK = "https://discord.gg/T2tP2uWbJz"
+local KEY_EXPIRY_HOURS = 5
+local HUB_NAME = "🔱 VOID FRUIT HOPPER"
+local SCRIPT_VERSION = "v3.0"
+
+-- ===== VARIABLES =====
+local keyEntered = false
+local currentKey = ""
+local keyStatus = "unknown"
+
+-- ===== HWID GENERATION =====
+local function GetHWID()
+    local success, result = pcall(function()
+        local httpService = game:GetService("HttpService")
+        local player = game.Players.LocalPlayer
+        return httpService:GenerateGUID(false) or tostring(player.UserId .. game.PlaceId .. os.time())
+    end)
+    return success and result or tostring(game.Players.LocalPlayer.UserId)
+end
+
+local hwid = GetHWID()
+
+-- ===== KEY VALIDATION =====
+local function ValidateKey(key)
+    key = string.upper(string.gsub(key, "%s+", ""))
+    if string.len(key) ~= 19 then
+        return false, "Invalid format! Use: ABCD-EFGH-IJKL-MNOP"
+    end
+    if string.sub(key, 5, 5) ~= "-" or string.sub(key, 10, 10) ~= "-" or string.sub(key, 15, 15) ~= "-" then
+        return false, "Invalid format! Use: ABCD-EFGH-IJKL-MNOP"
+    end
+    local validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
+    for i = 1, string.len(key) do
+        if not string.find(validChars, string.sub(key, i, i)) then
+            return false, "Invalid characters in key!"
+        end
+    end
+    return true, "✅ Key validated successfully!"
+end
+
+-- ===== KEY SYSTEM UI =====
+local function CreateKeyUI()
+    local player = game.Players.LocalPlayer
+    local userInputService = game:GetService("UserInputService")
+    local CoreGui = game:GetService("CoreGui")
+    local TweenService = game:GetService("TweenService")
+    
+    if CoreGui:FindFirstChild("VoidKeySystem") then
+        CoreGui.VoidKeySystem:Destroy()
+    end
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "VoidKeySystem"
+    screenGui.Parent = CoreGui
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    -- Dark Overlay
+    local overlay = Instance.new("Frame")
+    overlay.Parent = screenGui
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    overlay.BackgroundTransparency = 0.75
+    overlay.ZIndex = 100
+
+    -- Main Frame
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Parent = screenGui
+    mainFrame.Size = UDim2.new(0, 520, 0, 520)
+    mainFrame.Position = UDim2.new(0.5, -260, 0.5, -260)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+    mainFrame.BorderSizePixel = 2
+    mainFrame.BorderColor3 = Color3.fromRGB(150, 0, 255)
+    mainFrame.ZIndex = 101
+    mainFrame.Active = true
+    mainFrame.Draggable = true
+
+    -- Border glow
+    local borderGlow = Instance.new("Frame")
+    borderGlow.Parent = mainFrame
+    borderGlow.Size = UDim2.new(1, 4, 1, 4)
+    borderGlow.Position = UDim2.new(0, -2, 0, -2)
+    borderGlow.BackgroundTransparency = 1
+    borderGlow.BorderSizePixel = 2
+    borderGlow.BorderColor3 = Color3.fromRGB(150, 0, 255)
+    borderGlow.ZIndex = 99
+
+    -- Title Bar
+    local titleBar = Instance.new("Frame")
+    titleBar.Parent = mainFrame
+    titleBar.Size = UDim2.new(1, 0, 0, 50)
+    titleBar.Position = UDim2.new(0, 0, 0, 0)
+    titleBar.BackgroundColor3 = Color3.fromRGB(20, 0, 40)
+    titleBar.BorderSizePixel = 0
+    titleBar.ZIndex = 102
+
+    local titleText = Instance.new("TextLabel")
+    titleText.Parent = titleBar
+    titleText.Size = UDim2.new(1, -90, 1, 0)
+    titleText.Position = UDim2.new(0, 10, 0, 0)
+    titleText.BackgroundTransparency = 1
+    titleText.Text = "🔱 " .. HUB_NAME .. " | KEY SYSTEM"
+    titleText.TextColor3 = Color3.fromRGB(180, 100, 255)
+    titleText.TextSize = 16
+    titleText.Font = Enum.Font.GothamBold
+    titleText.TextXAlignment = Enum.TextXAlignment.Left
+    titleText.ZIndex = 103
+
+    -- Discord Button
+    local discordBtn = Instance.new("TextButton")
+    discordBtn.Parent = titleBar
+    discordBtn.Size = UDim2.new(0, 80, 1, -4)
+    discordBtn.Position = UDim2.new(1, -90, 0, 2)
+    discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+    discordBtn.BorderSizePixel = 0
+    discordBtn.Text = "💬 DISCORD"
+    discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    discordBtn.TextSize = 10
+    discordBtn.Font = Enum.Font.GothamBold
+    discordBtn.ZIndex = 103
+    discordBtn.MouseButton1Click:Connect(function()
+        if setclipboard then
+            setclipboard(DISCORD_LINK)
+        end
+    end)
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Parent = titleBar
+    closeBtn.Size = UDim2.new(0, 28, 1, 0)
+    closeBtn.Position = UDim2.new(1, -28, 0, 0)
+    closeBtn.BackgroundTransparency = 1
+    closeBtn.Text = "✕"
+    closeBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
+    closeBtn.TextSize = 16
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.ZIndex = 103
+    closeBtn.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+
+    -- Status Bar
+    local statusBar = Instance.new("Frame")
+    statusBar.Parent = mainFrame
+    statusBar.Size = UDim2.new(1, 0, 0, 28)
+    statusBar.Position = UDim2.new(0, 0, 0, 50)
+    statusBar.BackgroundColor3 = Color3.fromRGB(0, 10, 0)
+    statusBar.BorderSizePixel = 0
+    statusBar.ZIndex = 102
+
+    local statusText = Instance.new("TextLabel")
+    statusText.Parent = statusBar
+    statusText.Size = UDim2.new(0.7, 0, 1, 0)
+    statusText.Position = UDim2.new(0, 10, 0, 0)
+    statusText.BackgroundTransparency = 1
+    statusText.Text = "🟢 SYSTEM: READY"
+    statusText.TextColor3 = Color3.fromRGB(0, 255, 0)
+    statusText.TextSize = 12
+    statusText.Font = Enum.Font.Code
+    statusText.TextXAlignment = Enum.TextXAlignment.Left
+    statusText.ZIndex = 103
+
+    local hwidLabel = Instance.new("TextLabel")
+    hwidLabel.Parent = statusBar
+    hwidLabel.Size = UDim2.new(0.3, 0, 1, 0)
+    hwidLabel.Position = UDim2.new(0.7, 0, 0, 0)
+    hwidLabel.BackgroundTransparency = 1
+    hwidLabel.Text = "🖥️ " .. string.sub(hwid, 1, 8) .. "..."
+    hwidLabel.TextColor3 = Color3.fromRGB(60, 100, 60)
+    hwidLabel.TextSize = 10
+    hwidLabel.Font = Enum.Font.Code
+    hwidLabel.TextXAlignment = Enum.TextXAlignment.Right
+    hwidLabel.ZIndex = 103
+
+    -- Tabs
+    local tabContainer = Instance.new("Frame")
+    tabContainer.Parent = mainFrame
+    tabContainer.Size = UDim2.new(1, 0, 0, 38)
+    tabContainer.Position = UDim2.new(0, 0, 0, 78)
+    tabContainer.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    tabContainer.BorderSizePixel = 0
+    tabContainer.ZIndex = 102
+
+    local tabs = {}
+    local tabFrames = {}
+    local tabNames = {"🔓 ACTIVATE", "🎯 GET KEY", "ℹ️ INFO"}
+
+    for i, name in ipairs(tabNames) do
+        local btn = Instance.new("TextButton")
+        btn.Parent = tabContainer
+        btn.Size = UDim2.new(0, 170, 1, 0)
+        btn.Position = UDim2.new(0, (i-1) * 173 + 5, 0, 0)
+        btn.BackgroundColor3 = (i == 1) and Color3.fromRGB(100, 0, 200) or Color3.fromRGB(30, 30, 35)
+        btn.BorderSizePixel = 0
+        btn.Text = name
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.TextSize = 12
+        btn.Font = Enum.Font.GothamBold
+        btn.ZIndex = 103
+
+        local frame = Instance.new("ScrollingFrame")
+        frame.Parent = mainFrame
+        frame.Size = UDim2.new(1, -20, 1, -130)
+        frame.Position = UDim2.new(0, 10, 0, 120)
+        frame.BackgroundTransparency = 1
+        frame.BorderSizePixel = 0
+        frame.Visible = (i == 1)
+        frame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        frame.ScrollBarThickness = 4
+        frame.ScrollBarImageColor3 = Color3.fromRGB(150, 0, 255)
+        frame.ZIndex = 102
+
+        local layout = Instance.new("UIListLayout")
+        layout.Parent = frame
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Padding = UDim.new(0, 6)
+
+        table.insert(tabs, {btn = btn, frame = frame})
+
+        btn.MouseButton1Click:Connect(function()
+            for j, tab in ipairs(tabs) do
+                tab.btn.BackgroundColor3 = (j == i) and Color3.fromRGB(100, 0, 200) or Color3.fromRGB(30, 30, 35)
+                tab.frame.Visible = (j == i)
+            end
+        end)
+    end
+
+    local activateTab = tabs[1].frame
+    local generateTab = tabs[2].frame
+    local infoTab = tabs[3].frame
+
+    -- ===== ACTIVATE TAB =====
+    -- Status Display
+    local statusFrame = Instance.new("Frame")
+    statusFrame.Parent = activateTab
+    statusFrame.Size = UDim2.new(1, 0, 0, 32)
+    statusFrame.BackgroundColor3 = Color3.fromRGB(20, 0, 40)
+    statusFrame.BorderSizePixel = 1
+    statusFrame.BorderColor3 = Color3.fromRGB(150, 0, 255)
+    statusFrame.ZIndex = 103
+
+    local statusDisplay = Instance.new("TextLabel")
+    statusDisplay.Parent = statusFrame
+    statusDisplay.Size = UDim2.new(1, 0, 1, 0)
+    statusDisplay.BackgroundTransparency = 1
+    statusDisplay.Text = "🔴 NOT ACTIVATED"
+    statusDisplay.TextColor3 = Color3.fromRGB(255, 50, 50)
+    statusDisplay.TextSize = 14
+    statusDisplay.Font = Enum.Font.GothamBold
+    statusDisplay.ZIndex = 104
+
+    -- Key Input
+    local keyLabel = Instance.new("TextLabel")
+    keyLabel.Parent = activateTab
+    keyLabel.Size = UDim2.new(1, 0, 0, 25)
+    keyLabel.BackgroundTransparency = 1
+    keyLabel.Text = "📝 Paste your activation key:"
+    keyLabel.TextColor3 = Color3.fromRGB(200, 255, 200)
+    keyLabel.TextSize = 13
+    keyLabel.Font = Enum.Font.Gotham
+    keyLabel.TextXAlignment = Enum.TextXAlignment.Left
+    keyLabel.ZIndex = 103
+
+    local keyBox = Instance.new("TextBox")
+    keyBox.Parent = activateTab
+    keyBox.Size = UDim2.new(1, 0, 0, 40)
+    keyBox.BackgroundColor3 = Color3.fromRGB(5, 5, 10)
+    keyBox.BorderSizePixel = 2
+    keyBox.BorderColor3 = Color3.fromRGB(150, 0, 255)
+    keyBox.Text = ""
+    keyBox.TextColor3 = Color3.fromRGB(0, 255, 0)
+    keyBox.TextSize = 16
+    keyBox.Font = Enum.Font.Code
+    keyBox.TextXAlignment = Enum.TextXAlignment.Center
+    keyBox.ZIndex = 103
+    keyBox.PlaceholderText = "ABCD-EFGH-IJKL-MNOP"
+    keyBox.PlaceholderColor3 = Color3.fromRGB(50, 100, 50)
+
+    local activateBtn = Instance.new("TextButton")
+    activateBtn.Parent = activateTab
+    activateBtn.Size = UDim2.new(1, 0, 0, 42)
+    activateBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 200)
+    activateBtn.BorderSizePixel = 0
+    activateBtn.Text = "🔓 ACTIVATE SCRIPT"
+    activateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    activateBtn.TextSize = 16
+    activateBtn.Font = Enum.Font.GothamBold
+    activateBtn.ZIndex = 103
+
+    local activateMsg = Instance.new("TextLabel")
+    activateMsg.Parent = activateTab
+    activateMsg.Size = UDim2.new(1, 0, 0, 30)
+    activateMsg.BackgroundTransparency = 1
+    activateMsg.Text = ""
+    activateMsg.TextColor3 = Color3.fromRGB(255, 0, 0)
+    activateMsg.TextSize = 13
+    activateMsg.Font = Enum.Font.Gotham
+    activateMsg.ZIndex = 103
+
+    -- ===== GET KEY TAB =====
+    local infoText = Instance.new("TextLabel")
+    infoText.Parent = generateTab
+    infoText.Size = UDim2.new(1, 0, 0, 80)
+    infoText.BackgroundTransparency = 1
+    infoText.Text = "🎯 Get your activation key!\n\n1. Click the button below or copy the link\n2. Complete the verification on the website\n3. Get your key from the website\n4. Go back to 'Activate' tab and paste it"
+    infoText.TextColor3 = Color3.fromRGB(200, 255, 200)
+    infoText.TextSize = 13
+    infoText.Font = Enum.Font.Gotham
+    infoText.TextXAlignment = Enum.TextXAlignment.Center
+    infoText.ZIndex = 103
+
+    local openBtn = Instance.new("TextButton")
+    openBtn.Parent = generateTab
+    openBtn.Size = UDim2.new(1, 0, 0, 45)
+    openBtn.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+    openBtn.BorderSizePixel = 0
+    openBtn.Text = "🌐 OPEN KEY WEBSITE"
+    openBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    openBtn.TextSize = 15
+    openBtn.Font = Enum.Font.GothamBold
+    openBtn.ZIndex = 103
+    openBtn.MouseButton1Click:Connect(function()
+        game:GetService("GuiService"):OpenBrowserWindow(KEY_WEBSITE)
+        activateMsg.Text = "📌 Website opened! Complete verification."
+        activateMsg.TextColor3 = Color3.fromRGB(255, 200, 0)
+    end)
+
+    local copyBtn = Instance.new("TextButton")
+    copyBtn.Parent = generateTab
+    copyBtn.Size = UDim2.new(1, 0, 0, 35)
+    copyBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+    copyBtn.BorderSizePixel = 0
+    copyBtn.Text = "📋 COPY LINK (Open in Browser)"
+    copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    copyBtn.TextSize = 13
+    copyBtn.Font = Enum.Font.GothamBold
+    copyBtn.ZIndex = 103
+    copyBtn.MouseButton1Click:Connect(function()
+        if setclipboard then
+            setclipboard(KEY_WEBSITE)
+            activateMsg.Text = "✅ Link copied! Open in your browser."
+            activateMsg.TextColor3 = Color3.fromRGB(0, 255, 0)
+        end
+    end)
+
+    local linkLabel = Instance.new("TextLabel")
+    linkLabel.Parent = generateTab
+    linkLabel.Size = UDim2.new(1, 0, 0, 25)
+    linkLabel.BackgroundTransparency = 1
+    linkLabel.Text = "🔗 " .. KEY_WEBSITE
+    linkLabel.TextColor3 = Color3.fromRGB(80, 130, 80)
+    linkLabel.TextSize = 11
+    linkLabel.Font = Enum.Font.Code
+    linkLabel.ZIndex = 103
+
+    local expiryLabel = Instance.new("TextLabel")
+    expiryLabel.Parent = generateTab
+    expiryLabel.Size = UDim2.new(1, 0, 0, 25)
+    expiryLabel.BackgroundTransparency = 1
+    expiryLabel.Text = "⏰ Keys expire after " .. KEY_EXPIRY_HOURS .. " hours"
+    expiryLabel.TextColor3 = Color3.fromRGB(100, 150, 100)
+    expiryLabel.TextSize = 12
+    expiryLabel.Font = Enum.Font.Gotham
+    expiryLabel.ZIndex = 103
+
+    -- ===== INFO TAB =====
+    local infoLines = {
+        "📋 " .. HUB_NAME .. " INFO",
+        "",
+        "📌 Version: " .. SCRIPT_VERSION,
+        "💬 Discord: " .. DISCORD_LINK,
+        "🌐 Key Website: " .. KEY_WEBSITE,
+        "",
+        "🔑 HOW TO USE:",
+        "1. Go to 'Get Key' tab",
+        "2. Open the website or copy the link",
+        "3. Complete verification on the website",
+        "4. Get your key from the website",
+        "5. Go to 'Activate' tab",
+        "6. Paste your key and click Activate",
+        "",
+        "⚠️ Keys expire after " .. KEY_EXPIRY_HOURS .. " hours",
+        "🛡️ This script is protected by Void Key System"
+    }
+
+    for _, line in pairs(infoLines) do
+        local label = Instance.new("TextLabel")
+        label.Parent = infoTab
+        label.Size = UDim2.new(1, 0, 0, 22)
+        label.BackgroundTransparency = 1
+        label.Text = line
+        label.TextColor3 = (line:find("⚠️") or line:find("🛡️")) and Color3.fromRGB(255, 200, 100) or
+                          (line:find("📌") or line:find("💬") or line:find("🌐") or line:find("🔑")) and Color3.fromRGB(180, 100, 255) or
+                          Color3.fromRGB(200, 200, 200)
+        label.TextSize = (line:find("📋") or line == "") and 16 or 13
+        label.Font = (line:find("📋")) and Enum.Font.GothamBold or Enum.Font.Gotham
+        label.TextXAlignment = (line == "") and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
+        label.ZIndex = 103
+    end
+
+    -- ===== ACTIVATE FUNCTION =====
+    activateBtn.MouseButton1Click:Connect(function()
+        local key = string.upper(string.gsub(keyBox.Text, "%s+", ""))
+        if string.len(key) < 10 then
+            activateMsg.Text = "❌ Please enter a valid key!"
+            activateMsg.TextColor3 = Color3.fromRGB(255, 0, 0)
+            return
+        end
+
+        local isValid, message = ValidateKey(key)
+
+        if isValid then
+            keyEntered = true
+            currentKey = key
+            statusDisplay.Text = "✅ ACTIVATED! Script unlocked!"
+            statusDisplay.TextColor3 = Color3.fromRGB(0, 255, 0)
+            activateMsg.Text = "✅ " .. message
+            activateMsg.TextColor3 = Color3.fromRGB(0, 255, 0)
+            statusText.Text = "🟢 SYSTEM: ACTIVATED"
+            wait(0.5)
+            screenGui:Destroy()
+            StartMainScript()
+        else
+            activateMsg.Text = "❌ " .. message
+            activateMsg.TextColor3 = Color3.fromRGB(255, 0, 0)
+            keyBox.Text = ""
+            keyBox:CaptureFocus()
+            wait(0.5)
+            activateMsg.Text = ""
+        end
+    end)
+
+    keyBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then activateBtn.MouseButton1Click:Fire() end
+    end)
+
+    userInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.KeypadEnter then
+            if activateTab.Visible then activateBtn.MouseButton1Click:Fire() end
+        end
+    end)
+
+    return screenGui
+end
+
+-- =============================================
+-- ===== START MAIN SCRIPT =====
+-- =============================================
+function StartMainScript()
+    print("========================================")
+    print("⚡ VOID FRUIT HOPPER v" .. SCRIPT_VERSION)
+    print("🔑 Key: " .. currentKey)
+    print("🖥️ HWID: " .. string.sub(hwid, 1, 8) .. "...")
+    print("========================================")
+    
+    -- =============================================
+    -- ===== YOUR ORIGINAL SCRIPT STARTS HERE =====
+    -- =============================================
+    
+    -- ==================== INTRO SPLASH (5 SECONDS) ====================
+    do
+        local CoreGui = game:GetService("CoreGui")
+        local TweenService = game:GetService("TweenService")
+
+        if CoreGui:FindFirstChild("VoidHubIntro") then
+            CoreGui.VoidHubIntro:Destroy()
+        end
+
+        local IntroGui = Instance.new("ScreenGui")
+        IntroGui.Name = "VoidHubIntro"
+        IntroGui.IgnoreGuiInset = true
+        IntroGui.ResetOnSpawn = false
+        IntroGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        IntroGui.Parent = CoreGui
+
+        local Overlay = Instance.new("Frame")
+        Overlay.Size = UDim2.new(1, 0, 1, 0)
+        Overlay.BackgroundColor3 = Color3.fromRGB(5, 0, 12)
+        Overlay.BackgroundTransparency = 0
+        Overlay.BorderSizePixel = 0
+        Overlay.Parent = IntroGui
+
+        local Glow = Instance.new("Frame")
+        Glow.Size = UDim2.new(0, 520, 0, 180)
+        Glow.Position = UDim2.new(0.5, -260, 0.5, -100)
+        Glow.BackgroundColor3 = Color3.fromRGB(120, 0, 255)
+        Glow.BackgroundTransparency = 0.85
+        Glow.BorderSizePixel = 0
+        Glow.Parent = Overlay
+        local GlowCorner = Instance.new("UICorner", Glow)
+        GlowCorner.CornerRadius = UDim.new(0, 20)
+
+        local Title = Instance.new("TextLabel")
+        Title.Size = UDim2.new(0, 600, 0, 70)
+        Title.Position = UDim2.new(0.5, -300, 0.5, -95)
+        Title.BackgroundTransparency = 1
+        Title.Text = "VOID HUB"
+        Title.TextColor3 = Color3.fromRGB(200, 120, 255)
+        Title.Font = Enum.Font.GothamBold
+        Title.TextSize = 52
+        Title.TextTransparency = 1
+        Title.Parent = Overlay
+
+        local Subtitle = Instance.new("TextLabel")
+        Subtitle.Size = UDim2.new(0, 700, 0, 40)
+        Subtitle.Position = UDim2.new(0.5, -350, 0.5, -20)
+        Subtitle.BackgroundTransparency = 1
+        Subtitle.Text = "THE BIGGEST REVOLUTIONARY UPDATE IS HERE"
+        Subtitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Subtitle.Font = Enum.Font.Gotham
+        Subtitle.TextSize = 18
+        Subtitle.TextTransparency = 1
+        Subtitle.Parent = Overlay
+
+        local Discord = Instance.new("TextLabel")
+        Discord.Size = UDim2.new(0, 500, 0, 28)
+        Discord.Position = UDim2.new(0.5, -250, 0.5, 40)
+        Discord.BackgroundTransparency = 1
+        Discord.Text = "https://discord.gg/T2tP2uWbJz"
+        Discord.TextColor3 = Color3.fromRGB(160, 100, 255)
+        Discord.Font = Enum.Font.Code
+        Discord.TextSize = 16
+        Discord.TextTransparency = 1
+        Discord.Parent = Overlay
+
+        local Loading = Instance.new("TextLabel")
+        Loading.Size = UDim2.new(0, 200, 0, 20)
+        Loading.Position = UDim2.new(0.5, -100, 0.5, 90)
+        Loading.BackgroundTransparency = 1
+        Loading.Text = "Loading..."
+        Loading.TextColor3 = Color3.fromRGB(140, 140, 180)
+        Loading.Font = Enum.Font.Code
+        Loading.TextSize = 14
+        Loading.TextTransparency = 1
+        Loading.Parent = Overlay
+
+        local fadeInInfo = TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TweenService:Create(Title, fadeInInfo, {TextTransparency = 0}):Play()
+        TweenService:Create(Subtitle, fadeInInfo, {TextTransparency = 0}):Play()
+        TweenService:Create(Discord, fadeInInfo, {TextTransparency = 0}):Play()
+        TweenService:Create(Loading, fadeInInfo, {TextTransparency = 0}):Play()
+        TweenService:Create(Glow, fadeInInfo, {BackgroundTransparency = 0.75}):Play()
+
+        task.wait(3.6)
+
+        local fadeOutInfo = TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+        TweenService:Create(Title, fadeOutInfo, {TextTransparency = 1}):Play()
+        TweenService:Create(Subtitle, fadeOutInfo, {TextTransparency = 1}):Play()
+        TweenService:Create(Discord, fadeOutInfo, {TextTransparency = 1}):Play()
+        TweenService:Create(Loading, fadeOutInfo, {TextTransparency = 1}):Play()
+        TweenService:Create(Glow, fadeOutInfo, {BackgroundTransparency = 1}):Play()
+        TweenService:Create(Overlay, fadeOutInfo, {BackgroundTransparency = 1}):Play()
+
+        task.wait(0.7)
+        IntroGui:Destroy()
+    end
+
+    -- ==================== CONFIGURATION ====================
+    local API_URL = "https://leah-nonsequacious-unobviously.ngrok-free.dev/serverhop?limit=100"
+    local Players = game:GetService("Players")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local TeleportService = game:GetService("TeleportService")
+    local HttpService = game:GetService("HttpService")
+    local CoreGui = game:GetService("CoreGui")
+    local UserInputService = game:GetService("UserInputService")
+    local TweenService = game:GetService("TweenService")
+    local RunService = game:GetService("RunService")
+    local StarterGui = game:GetService("StarterGui")
+    local VirtualUser = game:GetService("VirtualUser")
+    local Remotes = ReplicatedStorage:WaitForChild("Remotes", 9e9)
+    local CommF = Remotes:WaitForChild("CommF_", 9e9)
+    local Player = Players.LocalPlayer
+    local Camera = workspace.CurrentCamera
+    -- Settings
+    getgenv().AutoFruitSniper = true
+    getgenv().AutoHop = true
+    getgenv().FruitESP = true
+    getgenv().TweenSpeed = 300
+    getgenv().StoreRetries = 3
+    getgenv().ScanInterval = 0.5
+    -- Fruit Data
+    local FRUIT_DATA = {
+        ["Kitsune Fruit"] = { id = "Kitsune-Kitsune", rarity = "Mythical", color = 16711680 },
+        ["Dragon Fruit"] = { id = "Dragon-Dragon", rarity = "Mythical", color = 16711680 },
+        ["Leopard Fruit"] = { id = "Leopard-Leopard", rarity = "Mythical", color = 16711680 },
+        ["Dough Fruit"] = { id = "Dough-Dough", rarity = "Mythical", color = 16711680 },
+        ["Yeti Fruit"] = { id = "Yeti-Yeti", rarity = "Mythical", color = 16711680 },
+        ["Gas Fruit"] = { id = "Gas-Gas", rarity = "Mythical", color = 16711680 },
+        ["Spirit Fruit"] = { id = "Spirit-Spirit", rarity = "Mythical", color = 16711680 },
+        ["Control Fruit"] = { id = "Control-Control", rarity = "Mythical", color = 16711680 },
+        ["Venom Fruit"] = { id = "Venom-Venom", rarity = "Mythical", color = 16711680 },
+        ["Shadow Fruit"] = { id = "Shadow-Shadow", rarity = "Mythical", color = 16711680 },
+        ["Blizzard Fruit"] = { id = "Blizzard-Blizzard", rarity = "Legendary", color = 16711935 },
+        ["Portal Fruit"] = { id = "Portal-Portal", rarity = "Legendary", color = 16711935 },
+        ["Buddha Fruit"] = { id = "Buddha-Buddha", rarity = "Legendary", color = 16711935 },
+        ["Phoenix Fruit"] = { id = "Phoenix-Phoenix", rarity = "Legendary", color = 16711935 },
+        ["Magma Fruit"] = { id = "Magma-Magma", rarity = "Rare", color = 3447003 },
+        ["Light Fruit"] = { id = "Light-Light", rarity = "Rare", color = 3447003 },
+        ["Ice Fruit"] = { id = "Ice-Ice", rarity = "Rare", color = 3447003 },
+    }
+    -- ==================== GUI SETUP ====================
+    if CoreGui:FindFirstChild("VoidFruitHopper") then CoreGui.VoidFruitHopper:Destroy() end
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "VoidFruitHopper"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = CoreGui
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    -- ==================== MAIN FRAME ====================
+    local Main = Instance.new("Frame")
+    Main.Size = UDim2.new(0, 420, 0, 520)
+    Main.Position = UDim2.new(0.5, -210, 0.5, -260)
+    Main.BackgroundColor3 = Color3.fromRGB(6, 6, 18)
+    Main.BackgroundTransparency = 0.05
+    Main.BorderSizePixel = 0
+    Main.Parent = ScreenGui
+    local Corner = Instance.new("UICorner", Main)
+    Corner.CornerRadius = UDim.new(0, 14)
+    -- Main Border Glow
+    local Border = Instance.new("UIStroke", Main)
+    Border.Color = Color3.fromRGB(100, 0, 255)
+    Border.Thickness = 2
+    Border.Transparency = 0.4
+    -- Outer Glow
+    local Glow1 = Instance.new("Frame")
+    Glow1.Size = UDim2.new(1, 10, 1, 10)
+    Glow1.Position = UDim2.new(0, -5, 0, -5)
+    Glow1.BackgroundColor3 = Color3.fromRGB(100, 0, 255)
+    Glow1.BackgroundTransparency = 0.85
+    Glow1.BorderSizePixel = 0
+    Glow1.Parent = Main
+    local G1Corner = Instance.new("UICorner", Glow1)
+    G1Corner.CornerRadius = UDim.new(0, 16)
+    local Glow2 = Instance.new("Frame")
+    Glow2.Size = UDim2.new(1, 18, 1, 18)
+    Glow2.Position = UDim2.new(0, -9, 0, -9)
+    Glow2.BackgroundColor3 = Color3.fromRGB(100, 0, 255)
+    Glow2.BackgroundTransparency = 0.92
+    Glow2.BorderSizePixel = 0
+    Glow2.Parent = Main
+    local G2Corner = Instance.new("UICorner", Glow2)
+    G2Corner.CornerRadius = UDim.new(0, 20)
+    -- ==================== TITLE BAR ====================
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Size = UDim2.new(1, 0, 0, 44)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(20, 0, 40)
+    TitleBar.BackgroundTransparency = 0.2
+    TitleBar.Parent = Main
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(0.6, 0, 1, 0)
+    Title.Position = UDim2.new(0, 14, 0, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = "⚡ VOID FRUIT HOPPER"
+    Title.TextColor3 = Color3.fromRGB(180, 100, 255)
+    Title.Font = Enum.Font.Code
+    Title.TextSize = 14
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = TitleBar
+    -- Status Indicator
+    local StatusFrame = Instance.new("Frame")
+    StatusFrame.Size = UDim2.new(0, 0, 0, 0)
+    StatusFrame.Position = UDim2.new(0.72, 0, 0.5, -6)
+    StatusFrame.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    StatusFrame.Parent = TitleBar
+    local SFCorner = Instance.new("UICorner", StatusFrame)
+    SFCorner.CornerRadius = UDim.new(1, 0)
+    local StatusText = Instance.new("TextLabel")
+    StatusText.Size = UDim2.new(0, 60, 0, 14)
+    StatusText.Position = UDim2.new(0.73, 0, 0.5, -7)
+    StatusText.BackgroundTransparency = 1
+    StatusText.Text = "● ONLINE"
+    StatusText.TextColor3 = Color3.fromRGB(0, 255, 0)
+    StatusText.Font = Enum.Font.Code
+    StatusText.TextSize = 9
+    StatusText.TextXAlignment = Enum.TextXAlignment.Left
+    StatusText.Parent = TitleBar
+    -- EXIT BUTTON
+    local ExitBtn = Instance.new("TextButton")
+    ExitBtn.Size = UDim2.new(0, 38, 0, 28)
+    ExitBtn.Position = UDim2.new(1, -46, 0.5, -14)
+    ExitBtn.BackgroundColor3 = Color3.fromRGB(80, 0, 0)
+    ExitBtn.BorderSizePixel = 1
+    ExitBtn.BorderColor3 = Color3.fromRGB(200, 0, 0)
+    ExitBtn.Text = "✕"
+    ExitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ExitBtn.Font = Enum.Font.Code
+    ExitBtn.TextSize = 14
+    ExitBtn.Parent = TitleBar
+    local ExitCorner = Instance.new("UICorner", ExitBtn)
+    ExitCorner.CornerRadius = UDim.new(0, 6)
+    ExitBtn.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
+    -- ==================== PROFILE SECTION ====================
+    local ProfileFrame = Instance.new("Frame")
+    ProfileFrame.Size = UDim2.new(0.96, 0, 0, 52)
+    ProfileFrame.Position = UDim2.new(0.02, 0, 0.10, 0)
+    ProfileFrame.BackgroundColor3 = Color3.fromRGB(15, 0, 30)
+    ProfileFrame.BackgroundTransparency = 0.3
+    ProfileFrame.BorderSizePixel = 1
+    ProfileFrame.BorderColor3 = Color3.fromRGB(100, 0, 255)
+    ProfileFrame.Parent = Main
+    local ProfileCorner = Instance.new("UICorner", ProfileFrame)
+    ProfileCorner.CornerRadius = UDim.new(0, 8)
+    -- Avatar
+    local Avatar = Instance.new("Frame")
+    Avatar.Size = UDim2.new(0, 38, 0, 38)
+    Avatar.Position = UDim2.new(0, 8, 0.5, -19)
+    Avatar.BackgroundColor3 = Color3.fromRGB(80, 0, 150)
+    Avatar.BackgroundTransparency = 0.3
+    Avatar.Parent = ProfileFrame
+    local AvatarCorner = Instance.new("UICorner", Avatar)
+    AvatarCorner.CornerRadius = UDim.new(1, 0)
+    local AvatarText = Instance.new("TextLabel")
+    AvatarText.Size = UDim2.new(1, 0, 1, 0)
+    AvatarText.BackgroundTransparency = 1
+    AvatarText.Text = Player.Name:sub(1, 1):upper()
+    AvatarText.TextColor3 = Color3.fromRGB(180, 100, 255)
+    AvatarText.Font = Enum.Font.Code
+    AvatarText.TextSize = 18
+    AvatarText.Parent = Avatar
+    -- Username
+    local Username = Instance.new("TextLabel")
+    Username.Size = UDim2.new(0.35, 0, 0.45, 0)
+    Username.Position = UDim2.new(0, 52, 0, 4)
+    Username.BackgroundTransparency = 1
+    Username.Text = Player.Name
+    Username.TextColor3 = Color3.fromRGB(200, 200, 255)
+    Username.Font = Enum.Font.Code
+    Username.TextSize = 12
+    Username.TextXAlignment = Enum.TextXAlignment.Left
+    Username.Parent = ProfileFrame
+    -- Level
+    local LevelLabel = Instance.new("TextLabel")
+    LevelLabel.Size = UDim2.new(0.25, 0, 0.45, 0)
+    LevelLabel.Position = UDim2.new(0.42, 0, 0, 4)
+    LevelLabel.BackgroundTransparency = 1
+    LevelLabel.Text = "✦ LVL: ?"
+    LevelLabel.TextColor3 = Color3.fromRGB(150, 150, 200)
+    LevelLabel.Font = Enum.Font.Code
+    LevelLabel.TextSize = 10
+    LevelLabel.TextXAlignment = Enum.TextXAlignment.Left
+    LevelLabel.Parent = ProfileFrame
+    -- Team
+    local TeamLabel = Instance.new("TextLabel")
+    TeamLabel.Size = UDim2.new(0.25, 0, 0.45, 0)
+    TeamLabel.Position = UDim2.new(0.42, 0, 0.5, 0)
+    TeamLabel.BackgroundTransparency = 1
+    TeamLabel.Text = "⚔️ TEAM: ?"
+    TeamLabel.TextColor3 = Color3.fromRGB(150, 150, 200)
+    TeamLabel.Font = Enum.Font.Code
+    TeamLabel.TextSize = 10
+    TeamLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TeamLabel.Parent = ProfileFrame
+    -- Stats
+    local StatsLabel = Instance.new("TextLabel")
+    StatsLabel.Size = UDim2.new(0.28, 0, 1, 0)
+    StatsLabel.Position = UDim2.new(0.72, 0, 0, 0)
+    StatsLabel.BackgroundTransparency = 1
+    StatsLabel.Text = "🔄 0 | 🍎 0"
+    StatsLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+    StatsLabel.Font = Enum.Font.Code
+    StatsLabel.TextSize = 11
+    StatsLabel.TextXAlignment = Enum.TextXAlignment.Right
+    StatsLabel.Parent = ProfileFrame
+    -- ==================== STATS ROW ====================
+    local StatsRow = Instance.new("Frame")
+    StatsRow.Size = UDim2.new(0.96, 0, 0, 32)
+    StatsRow.Position = UDim2.new(0.02, 0, 0.22, 0)
+    StatsRow.BackgroundColor3 = Color3.fromRGB(15, 0, 30)
+    StatsRow.BackgroundTransparency = 0.3
+    StatsRow.BorderSizePixel = 1
+    StatsRow.BorderColor3 = Color3.fromRGB(80, 0, 200)
+    StatsRow.Parent = Main
+    local StatsCorner = Instance.new("UICorner", StatsRow)
+    StatsCorner.CornerRadius = UDim.new(0, 6)
+    local HopCountLabel = Instance.new("TextLabel")
+    HopCountLabel.Size = UDim2.new(0.33, 0, 1, 0)
+    HopCountLabel.Position = UDim2.new(0, 8, 0, 0)
+    HopCountLabel.BackgroundTransparency = 1
+    HopCountLabel.Text = "🔄 HOPS: 0"
+    HopCountLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+    HopCountLabel.Font = Enum.Font.Code
+    HopCountLabel.TextSize = 10
+    HopCountLabel.TextXAlignment = Enum.TextXAlignment.Left
+    HopCountLabel.Parent = StatsRow
+    local FruitCountLabel = Instance.new("TextLabel")
+    FruitCountLabel.Size = UDim2.new(0.33, 0, 1, 0)
+    FruitCountLabel.Position = UDim2.new(0.33, 0, 0, 0)
+    FruitCountLabel.BackgroundTransparency = 1
+    FruitCountLabel.Text = "🍎 FRUITS: 0"
+    FruitCountLabel.TextColor3 = Color3.fromRGB(255, 150, 200)
+    FruitCountLabel.Font = Enum.Font.Code
+    FruitCountLabel.TextSize = 10
+    FruitCountLabel.TextXAlignment = Enum.TextXAlignment.Center
+    FruitCountLabel.Parent = StatsRow
+    local ServerStatus = Instance.new("TextLabel")
+    ServerStatus.Size = UDim2.new(0.33, 0, 1, 0)
+    ServerStatus.Position = UDim2.new(0.66, 0, 0, 0)
+    ServerStatus.BackgroundTransparency = 1
+    ServerStatus.Text = "🎮 READY"
+    ServerStatus.TextColor3 = Color3.fromRGB(100, 255, 150)
+    ServerStatus.Font = Enum.Font.Code
+    ServerStatus.TextSize = 10
+    ServerStatus.TextXAlignment = Enum.TextXAlignment.Right
+    ServerStatus.Parent = StatsRow
+    -- ==================== TOGGLE BUTTONS ====================
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Size = UDim2.new(0.96, 0, 0, 75)
+    ToggleFrame.Position = UDim2.new(0.02, 0, 0.30, 0)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(15, 0, 30)
+    ToggleFrame.BackgroundTransparency = 0.3
+    ToggleFrame.BorderSizePixel = 1
+    ToggleFrame.BorderColor3 = Color3.fromRGB(80, 0, 200)
+    ToggleFrame.Parent = Main
+    local ToggleCorner = Instance.new("UICorner", ToggleFrame)
+    ToggleCorner.CornerRadius = UDim.new(0, 6)
+    local function CreateToggle(parent, xPos, yPos, text, settingName, icon)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0.31, -4, 0, 28)
+        btn.Position = UDim2.new(xPos, 0, yPos, 0)
+        btn.BackgroundColor3 = getgenv()[settingName] and Color3.fromRGB(30, 0, 60) or Color3.fromRGB(15, 0, 20)
+        btn.BorderSizePixel = 1
+        btn.BorderColor3 = getgenv()[settingName] and Color3.fromRGB(150, 0, 255) or Color3.fromRGB(60, 0, 80)
+        btn.Text = (getgenv()[settingName] and "🟢 " or "🔴 ") .. text
+        btn.TextColor3 = getgenv()[settingName] and Color3.fromRGB(200, 100, 255) or Color3.fromRGB(150, 80, 150)
+        btn.Font = Enum.Font.Code
+        btn.TextSize = 9
+        btn.Parent = parent
+       
+        local btnCorner = Instance.new("UICorner", btn)
+        btnCorner.CornerRadius = UDim.new(0, 4)
+       
+        btn.MouseButton1Click:Connect(function()
+            getgenv()[settingName] = not getgenv()[settingName]
+            btn.BackgroundColor3 = getgenv()[settingName] and Color3.fromRGB(30, 0, 60) or Color3.fromRGB(15, 0, 20)
+            btn.BorderColor3 = getgenv()[settingName] and Color3.fromRGB(150, 0, 255) or Color3.fromRGB(60, 0, 80)
+            btn.Text = (getgenv()[settingName] and "🟢 " or "🔴 ") .. text
+            btn.TextColor3 = getgenv()[settingName] and Color3.fromRGB(200, 100, 255) or Color3.fromRGB(150, 80, 150)
+            AddLog("⚡ " .. settingName .. " → " .. tostring(getgenv()[settingName]), Color3.fromRGB(180, 100, 255))
+        end)
+    end
+    CreateToggle(ToggleFrame, 0.02, 0.1, "FRUIT SNIPE", "AutoFruitSniper")
+    CreateToggle(ToggleFrame, 0.35, 0.1, "AUTO HOP", "AutoHop")
+    CreateToggle(ToggleFrame, 0.68, 0.1, "FRUIT ESP", "FruitESP")
+    -- ==================== ACTION BUTTONS ====================
+    local ActionFrame = Instance.new("Frame")
+    ActionFrame.Size = UDim2.new(0.96, 0, 0, 38)
+    ActionFrame.Position = UDim2.new(0.02, 0, 0.46, 0)
+    ActionFrame.BackgroundColor3 = Color3.fromRGB(15, 0, 30)
+    ActionFrame.BackgroundTransparency = 0.3
+    ActionFrame.BorderSizePixel = 1
+    ActionFrame.BorderColor3 = Color3.fromRGB(80, 0, 200)
+    ActionFrame.Parent = Main
+    local ActionCorner = Instance.new("UICorner", ActionFrame)
+    ActionCorner.CornerRadius = UDim.new(0, 6)
+    local ManualHopBtn = Instance.new("TextButton")
+    ManualHopBtn.Size = UDim2.new(0.48, -4, 0, 30)
+    ManualHopBtn.Position = UDim2.new(0.02, 0, 0.5, -15)
+    ManualHopBtn.BackgroundColor3 = Color3.fromRGB(20, 0, 50)
+    ManualHopBtn.BorderSizePixel = 1
+    ManualHopBtn.BorderColor3 = Color3.fromRGB(100, 0, 255)
+    ManualHopBtn.Text = "🚀 MANUAL HOP"
+    ManualHopBtn.TextColor3 = Color3.fromRGB(180, 100, 255)
+    ManualHopBtn.Font = Enum.Font.Code
+    ManualHopBtn.TextSize = 10
+    ManualHopBtn.Parent = ActionFrame
+    local MCorner = Instance.new("UICorner", ManualHopBtn)
+    MCorner.CornerRadius = UDim.new(0, 4)
+    ManualHopBtn.MouseButton1Click:Connect(function()
+        AddLog("🔘 Manual hop triggered", Color3.fromRGB(180, 100, 255))
+        ServerHop()
+    end)
+    local ResetBtn = Instance.new("TextButton")
+    ResetBtn.Size = UDim2.new(0.48, -4, 0, 30)
+    ResetBtn.Position = UDim2.new(0.5, 0, 0.5, -15)
+    ResetBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
+    ResetBtn.BorderSizePixel = 1
+    ResetBtn.BorderColor3 = Color3.fromRGB(200, 50, 50)
+    ResetBtn.Text = "🔄 RESET STATS"
+    ResetBtn.TextColor3 = Color3.fromRGB(255, 150, 150)
+    ResetBtn.Font = Enum.Font.Code
+    ResetBtn.TextSize = 10
+    ResetBtn.Parent = ActionFrame
+    local RCorner = Instance.new("UICorner", ResetBtn)
+    RCorner.CornerRadius = UDim.new(0, 4)
+    ResetBtn.MouseButton1Click:Connect(function()
+        hopCount = 0
+        fruitGrabbedCount = 0
+        HopCountLabel.Text = "🔄 HOPS: 0"
+        FruitCountLabel.Text = "🍎 FRUITS: 0"
+        StatsLabel.Text = "🔄 0 | 🍎 0"
+        AddLog("📊 Stats reset", Color3.fromRGB(255, 200, 100))
+    end)
+    -- ==================== LOG FRAME ====================
+    local LogFrame = Instance.new("Frame")
+    LogFrame.Size = UDim2.new(0.96, 0, 0, 185)
+    LogFrame.Position = UDim2.new(0.02, 0, 0.53, 0)
+    LogFrame.BackgroundColor3 = Color3.fromRGB(10, 0, 20)
+    LogFrame.BackgroundTransparency = 0.2
+    LogFrame.BorderSizePixel = 1
+    LogFrame.BorderColor3 = Color3.fromRGB(60, 0, 150)
+    LogFrame.Parent = Main
+    local LogCorner = Instance.new("UICorner", LogFrame)
+    LogCorner.CornerRadius = UDim.new(0, 6)
+    local LogTitle = Instance.new("TextLabel")
+    LogTitle.Size = UDim2.new(1, 0, 0, 18)
+    LogTitle.Position = UDim2.new(0, 0, 0, 0)
+    LogTitle.BackgroundColor3 = Color3.fromRGB(15, 0, 30)
+    LogTitle.Text = "📋 ACTIVITY LOG"
+    LogTitle.TextColor3 = Color3.fromRGB(180, 100, 255)
+    LogTitle.Font = Enum.Font.Code
+    LogTitle.TextSize = 8
+    LogTitle.Parent = LogFrame
+    local DebugLog = Instance.new("ScrollingFrame")
+    DebugLog.Size = UDim2.new(1, -8, 1, -20)
+    DebugLog.Position = UDim2.new(0, 4, 0, 18)
+    DebugLog.BackgroundTransparency = 1
+    DebugLog.ScrollBarThickness = 3
+    DebugLog.ScrollBarImageColor3 = Color3.fromRGB(100, 0, 255)
+    DebugLog.CanvasSize = UDim2.new(0, 0, 0, 0)
+    DebugLog.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    DebugLog.Parent = LogFrame
+    local LogLayout = Instance.new("UIListLayout", DebugLog)
+    LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    LogLayout.Padding = UDim.new(0, 1)
+    local function AddLog(text, color)
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -8, 0, 16)
+        label.BackgroundTransparency = 1
+        label.Text = "▸ " .. os.date("%H:%M:%S") .. " | " .. text
+        label.TextColor3 = color or Color3.fromRGB(180, 100, 255)
+        label.Font = Enum.Font.Code
+        label.TextSize = 9
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = DebugLog
+        DebugLog.CanvasPosition = Vector2.new(0, DebugLog.AbsoluteCanvasSize.Y)
+       
+        task.delay(40, function()
+            if label and label.Parent then label:Destroy() end
+        end)
+    end
+    -- ==================== DRAGGABLE ====================
+    local dragging = false
+    local dragStart, startPos
+    TitleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = Main.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    -- ==================== VARIABLES ====================
+    local hopCount = 0
+    local fruitGrabbedCount = 0
+    local autoHopEnabled = true
+    local farmingPlatform = nil
+    local isFarming = false
+    -- ==================== FARMING PLATFORM ====================
+    local function SetupFarmingPlatform()
+        if farmingPlatform and farmingPlatform.Parent then
+            farmingPlatform:Destroy()
+        end
+       
+        farmingPlatform = Instance.new("Part", workspace)
+        farmingPlatform.Size = Vector3.new(1, 1, 1)
+        farmingPlatform.Name = "VOID_Platform"
+        farmingPlatform.Anchored = true
+        farmingPlatform.CanCollide = false
+        farmingPlatform.Transparency = 1
+        farmingPlatform.Parent = workspace
+    end
+    SetupFarmingPlatform()
+    local function TweenToPosition(targetCFrame)
+        local char = Player.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return false end
+       
+        local distance = (hrp.Position - targetCFrame.Position).Magnitude
+        local speed = getgenv().TweenSpeed or 300
+        local duration = math.max(distance / speed, 0.2)
+       
+        farmingPlatform.CFrame = hrp.CFrame
+        isFarming = true
+       
+        local tween = TweenService:Create(farmingPlatform, TweenInfo.new(duration, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
+        tween:Play()
+        tween.Completed:Wait()
+        return true
+    end
+    -- Movement sync
+    task.spawn(function()
+        while true do
+            task.wait()
+            if isFarming and Player.Character then
+                pcall(function()
+                    local hrp = Player.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp and farmingPlatform and farmingPlatform.Parent then
+                        hrp.CFrame = farmingPlatform.CFrame
+                        hrp.Velocity = Vector3.new(0, 0, 0)
+                    end
+                   
+                    local stun = Player.Character:FindFirstChild("Stun")
+                    if stun and stun.Value ~= 0 then stun.Value = 0 end
+                   
+                    local busy = Player.Character:FindFirstChild("Busy")
+                    if busy and busy.Value then busy.Value = false end
+                end)
+            end
+        end
+    end)
+    -- ==================== FRUIT ESP ====================
+    local function AddESP(part)
+        if not getgenv().FruitESP then return end
+        if not part or part:FindFirstChild("VOID_ESP") then return end
+       
+        local folder = Instance.new("Folder", part)
+        folder.Name = "VOID_ESP"
+       
+        local billboard = Instance.new("BillboardGui", folder)
+        billboard.Adornee = part
+        billboard.Size = UDim2.new(0, 130, 0, 44)
+        billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+        billboard.AlwaysOnTop = true
+       
+        local label = Instance.new("TextLabel", billboard)
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.fromRGB(255, 100, 255)
+        label.Font = Enum.Font.GothamBold
+        label.TextSize = 11
+        label.TextStrokeTransparency = 0.2
+       
+        -- Glow circle under fruit
+        local glow = Instance.new("Part", part)
+        glow.Size = Vector3.new(3.5, 0.3, 3.5)
+        glow.Position = part.Position + Vector3.new(0, -0.5, 0)
+        glow.Anchored = true
+        glow.CanCollide = false
+        glow.Transparency = 0.3
+        glow.Color = Color3.fromRGB(200, 0, 255)
+        glow.Material = Enum.Material.Neon
+        glow.Name = "FruitGlow"
+       
+        task.spawn(function()
+            while label and label.Parent and part and part.Parent do
+                local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local dist = math.floor((hrp.Position - part.Position).Magnitude)
+                    local fruitName = part.Parent and part.Parent.Name or "Fruit"
+                    label.Text = "✦ " .. fruitName .. " [" .. dist .. "m]"
+                end
+                task.wait(0.3)
+            end
+            if folder then folder:Destroy() end
+        end)
+    end
+    -- ESP loop
+    task.spawn(function()
+        while true do
+            if getgenv().FruitESP then
+                for _, obj in pairs(workspace:GetChildren()) do
+                    pcall(function()
+                        if obj and obj.Parent and (obj:IsA("Tool") or string.find(obj.Name, "Fruit")) then
+                            local handle = obj:FindFirstChild("Handle")
+                            if handle and not handle:FindFirstChild("VOID_ESP") then
+                                AddESP(handle)
+                            end
+                        end
+                    end)
+                end
+            end
+            task.wait(1)
+        end
+    end)
+    -- ==================== FRUIT SNIPER ====================
+    local function FindFruits()
+        local fruits = {}
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj and obj.Parent then
+                local isTool = obj:IsA("Tool")
+                local hasFruitName = string.find(obj.Name, "Fruit")
+                local hasHandle = obj:FindFirstChild("Handle")
+               
+                if (isTool or hasFruitName) and hasHandle then
+                    table.insert(fruits, obj)
+                end
+            end
+        end
+        return fruits
+    end
+    local function GetInventoryFruit()
+        for _, container in pairs({Player.Character, Player.Backpack}) do
+            if container then
+                for _, tool in pairs(container:GetChildren()) do
+                    if tool:IsA("Tool") and tool:FindFirstChild("Fruit") then
+                        return tool
+                    end
+                end
+            end
+        end
+        return nil
+    end
+    local function StoreFruit(fruitTool)
+        local fruitName = fruitTool.Name
+        local fruitData = FRUIT_DATA[fruitName]
+        local fruitId = fruitData and fruitData.id or fruitName:gsub(" Fruit", ""):gsub(" ", "-") .. "-" .. fruitName:gsub(" Fruit", ""):gsub(" ", "-")
+       
+        for attempt = 1, getgenv().StoreRetries do
+            local success, result = pcall(function()
+                return CommF:InvokeServer("StoreFruit", fruitId, fruitTool)
+            end)
+           
+            if success and result == true then
+                AddLog("📦 Stored: " .. fruitName .. " ✓", Color3.fromRGB(180, 100, 255))
+                return true
+            end
+            task.wait(1)
+        end
+       
+        AddLog("❌ Failed to store: " .. fruitName, Color3.fromRGB(255, 80, 80))
+        return false
+    end
+    local function CollectFruit(fruit)
+        if not fruit or not fruit.Parent then return false end
+       
+        local handle = fruit:FindFirstChild("Handle")
+        if not handle then return false end
+       
+        local fruitName = fruit.Name
+        local fruitData = FRUIT_DATA[fruitName] or { rarity = "Unknown", value = "?" }
+       
+        AddLog("🎯 Target: " .. fruitName .. " [" .. (fruitData.rarity or "Unknown") .. "]", Color3.fromRGB(255, 150, 255))
+        ServerStatus.Text = "🍎 SNIPING..."
+       
+        -- Fly to fruit
+        TweenToPosition(CFrame.new(handle.Position + Vector3.new(0, 8, 0)))
+        task.wait(0.3)
+       
+        TweenToPosition(handle.CFrame)
+        task.wait(0.5)
+       
+        -- Collect loop
+        local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            for i = 1, 10 do
+                if not fruit.Parent then break end
+                hrp.CFrame = handle.CFrame
+                farmingPlatform.CFrame = handle.CFrame
+                task.wait(0.15)
+            end
+        end
+       
+        task.wait(1)
+       
+        local collected = GetInventoryFruit()
+        if collected then
+            fruitGrabbedCount = fruitGrabbedCount + 1
+            FruitCountLabel.Text = "🍎 FRUITS: " .. fruitGrabbedCount
+            StatsLabel.Text = "🔄 " .. hopCount .. " | 🍎 " .. fruitGrabbedCount
+            AddLog("✨ SUCCESS! Grabbed: " .. collected.Name, Color3.fromRGB(100, 255, 200))
+            StoreFruit(collected)
+            return true
+        end
+       
+        AddLog("⚠️ Failed to collect fruit", Color3.fromRGB(255, 180, 0))
+        return false
+    end
+    -- ==================== SERVER HOP ====================
+    local function ServerHop()
+        if not autoHopEnabled or not getgenv().AutoHop then
+            return
+        end
+       
+        hopCount = hopCount + 1
+        HopCountLabel.Text = "🔄 HOPS: " .. hopCount
+        StatsLabel.Text = "🔄 " .. hopCount .. " | 🍎 " .. fruitGrabbedCount
+        ServerStatus.Text = "🚀 HOPPING..."
+       
+        AddLog("🌐 Searching for servers...", Color3.fromRGB(180, 100, 255))
+       
+        -- Try ngrok API first
+        local success, response = pcall(function()
+            return game:HttpGet(API_URL)
+        end)
+       
+        local targetServer = nil
+       
+        if success then
+            local data = HttpService:JSONDecode(response)
+           
+            if data and data.servers then
+                local goodServers = {}
+                for _, s in ipairs(data.servers) do
+                    if s.players and s.players < 12 and s.players > 0 then
+                        table.insert(goodServers, s)
+                    end
+                end
+               
+                if #goodServers > 0 then
+                    table.sort(goodServers, function(a, b) return a.players < b.players end)
+                    targetServer = goodServers[1]
+                    AddLog("🎯 Found server: " .. targetServer.players .. " players", Color3.fromRGB(100, 255, 200))
+                elseif data.servers[1] then
+                    targetServer = data.servers[1]
+                    AddLog("⚠️ Using random server: " .. targetServer.players .. " players", Color3.fromRGB(255, 200, 100))
+                end
+            end
+        else
+            AddLog("⚠️ API failed, using fallback", Color3.fromRGB(255, 200, 100))
+        end
+       
+        -- Fallback: Use Roblox API
+        if not targetServer then
+            local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?limit=50"
+            local fbSuccess, fbResponse = pcall(function()
+                return game:HttpGet(url)
+            end)
+           
+            if fbSuccess then
+                local fbData = HttpService:JSONDecode(fbResponse)
+                if fbData and fbData.data then
+                    local best = nil
+                    for _, server in ipairs(fbData.data) do
+                        if server.playing and server.playing < server.maxPlayers and server.playing > 0 then
+                            if not best or server.playing < best.playing then
+                                best = server
+                            end
+                        end
+                    end
+                    if best then
+                        targetServer = {jobId = best.id, players = best.playing}
+                        AddLog("📡 Fallback found: " .. best.playing .. " players", Color3.fromRGB(100, 255, 200))
+                    end
+                end
+            end
+        end
+       
+        if targetServer then
+            isFarming = false
+            ServerStatus.Text = "✨ TELEPORTING..."
+            AddLog("✨ HOPPING to new server...", Color3.fromRGB(180, 100, 255))
+            task.wait(0.5)
+            TeleportService:TeleportToPlaceInstance(2753915549, targetServer.jobId)
+        else
+            AddLog("❌ No servers available", Color3.fromRGB(255, 80, 80))
+            ServerStatus.Text = "❌ NO SERVER"
+        end
+    end
+    -- ==================== MAIN LOOPS ====================
+    AddLog("━━━━━━━━━━━━━━━━━━━━━━━━━━", Color3.fromRGB(180, 100, 255))
+    AddLog("⚡ VOID FRUIT HOPPER v3.0", Color3.fromRGB(200, 150, 255))
+    AddLog("━━━━━━━━━━━━━━━━━━━━━━━━━━", Color3.fromRGB(180, 100, 255))
+    AddLog("✅ System Ready", Color3.fromRGB(100, 255, 200))
+    -- Join Marines
+    task.spawn(function()
+        task.wait(3)
+        if not Player.Team or Player.Team.Name == "Choosing" then
+            AddLog("⚔️ Joining Marines...", Color3.fromRGB(255, 200, 100))
+            pcall(function() CommF:InvokeServer("SetTeam", "Marines") end)
+            task.wait(2)
+        end
+        local team = Player.Team and Player.Team.Name or "None"
+        TeamLabel.Text = "⚔️ TEAM: " .. team
+        AddLog("✅ Team: " .. team, Color3.fromRGB(100, 255, 200))
+    end)
+    -- Auto-hop timer
+    task.spawn(function()
+        while true do
+            task.wait(75)
+            if autoHopEnabled and getgenv().AutoHop then
+                ServerHop()
+            end
+        end
+    end)
+    -- Fruit sniper loop
+    task.spawn(function()
+        while true do
+            task.wait(getgenv().ScanInterval)
+           
+            if not getgenv().AutoFruitSniper then
+                ServerStatus.Text = "⏸️ SNIPE OFF"
+                task.wait(1)
+                continue
+            end
+           
+            if not Player.Character or not Player.Character:FindFirstChild("HumanoidRootPart") then
+                task.wait(2)
+                continue
+            end
+           
+            ServerStatus.Text = "🔍 SCANNING..."
+           
+            local fruits = FindFruits()
+           
+            if #fruits == 0 then
+                ServerStatus.Text = "❌ NO FRUIT"
+                continue
+            end
+           
+            AddLog("🎯 Found " .. #fruits .. " fruit(s)!", Color3.fromRGB(180, 100, 255))
+           
+            for _, fruit in ipairs(fruits) do
+                if fruit and fruit.Parent then
+                    local collected = CollectFruit(fruit)
+                    if collected then
+                        AddLog("✅ Collection complete!", Color3.fromRGB(100, 255, 200))
+                    end
+                    task.wait(1)
+                end
+            end
+           
+            isFarming = false
+            AddLog("⏳ Waiting 3s...", Color3.fromRGB(255, 200, 100))
+            task.wait(3)
+        end
+    end)
+    -- Status updater
+    task.spawn(function()
+        while true do
+            if not getgenv().AutoFruitSniper then
+                ServerStatus.Text = "⏸️ SNIPE OFF"
+            elseif ServerStatus.Text ~= "🚀 HOPPING..." and ServerStatus.Text ~= "✨ TELEPORTING..." and ServerStatus.Text ~= "🍎 SNIPING..." then
+                ServerStatus.Text = "🎮 READY"
+            end
+            task.wait(3)
+        end
+    end)
+    -- Update level periodically
+    task.spawn(function()
+        while true do
+            pcall(function()
+                local data = Player:FindFirstChild("Data")
+                if data then
+                    local level = data:FindFirstChild("Level")
+                    if level then
+                        LevelLabel.Text = "✦ LVL: " .. level.Value
+                    end
+                end
+            end)
+            task.wait(5)
+        end
+    end)
+    AddLog("✅ VOID FRUIT HOPPER READY", Color3.fromRGB(100, 255, 200))
+    AddLog("🎯 Auto-snipe: ON | Auto-hop: ON", Color3.fromRGB(180, 100, 255))
+    -- ==================== KEYBIND ====================
+    UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.F7 then
+            ScreenGui.Enabled = not ScreenGui.Enabled
+            AddLog("UI " .. (ScreenGui.Enabled and "SHOWN" or "HIDDEN"), Color3.fromRGB(255, 200, 100))
+        end
+    end)
+    print("========================================")
+    print("⚡ VOID FRUIT HOPPER v3.0")
+    print("========================================")
+    print("Press F7 to toggle UI")
+    print("========================================")
+    
+    -- =============================================
+    -- ===== ORIGINAL SCRIPT ENDS HERE =====
+    -- =============================================
+end
+
+-- =============================================
+-- ===== START THE KEY SYSTEM =====
+-- =============================================
+
+-- Check if already activated
+if not keyEntered then
+    CreateKeyUI()
+else
+    StartMainScript()
+end
